@@ -1,0 +1,28 @@
+services:
+  postgres_db:
+    image: postgres:16-alpine # Sử dụng bản v16 ổn định và siêu nhẹ
+    container_name: aurapas_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: thanhphat              # Username đăng nhập DB
+      POSTGRES_PASSWORD: mysecretpassword   # Mật khẩu của bạn
+      POSTGRES_DB: aurasound_db             # Tên Database khởi tạo mặc định
+    ports:
+      - "5432:5432"                         # Mở cổng 5432 ra máy thật
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: aurapas_pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@test.com # Email để đăng nhập vào trang pgAdmin
+      PGADMIN_DEFAULT_PASSWORD: admin       # Mật khẩu đăng nhập pgAdmin
+    ports:
+      - "5050:80"                           # Mở cổng 5050 để vào giao diện web
+    depends_on:
+      - postgres_db
+
+volumes:
+  postgres_data:
