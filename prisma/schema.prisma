@@ -1,0 +1,158 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String    @id @default(uuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  password      String?
+  role          Role      @default(CUSTOMER)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  accounts      Account[]
+  sessions      Session[]
+
+  @@index([email])
+  @@index([role])
+}
+
+model Account {
+  id                String  @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  sessionToken String   @unique
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([sessionToken])
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+  @@index([identifier, token])
+}
+
+model Category {
+  id        String    @id @default(uuid()) @db.VarChar(36)
+  name      String    @unique @db.VarChar(255)
+  slug      String    @unique @db.VarChar(255)
+  parentId  String?   @db.VarChar(36)
+  createdAt DateTime? @default(now()) @db.Timestamp(6)
+  updatedAt DateTime? @default(now()) @updatedAt @db.Timestamp(6)
+  products  Product[]
+  parent    Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children  Category[] @relation("CategoryHierarchy")
+}
+
+model Brand {
+  id        String    @id @default(uuid()) @db.VarChar(36)
+  name      String    @unique @db.VarChar(255)
+  slug      String    @unique @db.VarChar(255)
+  logoUrl   String?   @db.VarChar(255)
+  createdAt DateTime? @default(now()) @db.Timestamp(6)
+  updatedAt DateTime? @default(now()) @updatedAt @db.Timestamp(6)
+  products  Product[]
+}
+
+model Product {
+  id            String        @id @default(uuid()) @db.VarChar(36)
+  name          String        @db.VarChar(255)
+  slug          String        @unique @db.VarChar(255) @default("")
+  categoryId    String        @db.VarChar(36)
+  categoryLabel String        @db.VarChar(255)
+  brandId       String        @db.VarChar(36)
+  price         Int
+  originalPrice Int?
+  rating        Float?        @default(4.5)
+  reviewsCount  Int?          @default(0)
+  badge         String?       @db.VarChar(100)
+  description   String?
+  features      String[]
+  specs         Json?
+  colors        Json?
+  imageType     String        @db.VarChar(50)
+  gift          String?       @db.VarChar(255)
+  isSold        Boolean       @default(false)
+  createdAt     DateTime?     @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime?     @default(now()) @updatedAt @db.Timestamp(6)
+  brand         Brand         @relation(fields: [brandId], references: [id], onUpdate: NoAction)
+  category      Category      @relation(fields: [categoryId], references: [id], onUpdate: NoAction)
+  images        ProductImage[]
+
+  @@index([createdAt(sort: Desc), id(sort: Desc)], name: "product_created_at_id_desc_idx")
+  @@index([price(sort: Asc), id(sort: Asc)], name: "product_price_id_asc_idx")
+  @@index([price(sort: Desc), id(sort: Desc)], name: "product_price_id_desc_idx")
+}
+
+model ProductImage {
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  productId String   @db.VarChar(36)
+  url       String   @db.VarChar(500)
+  isMain    Boolean  @default(false)
+  sortOrder Int?     @default(0)
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([productId, isMain])
+}
+
+enum Role {
+  ADMIN
+  CUSTOMER
+}
+
+enum ProductStatus {
+  AVAILABLE
+  OUT_OF_STOCK
+  PRE_ORDER
+}
+
+enum ProductCategory {
+  TAI_NGHE
+  LOA
+  AMPLY
+  PHU_KIEN
+  SOUNDBAR
+  DAC
+  STUDIO
+}
+
+enum ProductImageType {
+  HEADPHONES
+  SPEAKER_TALL
+  SPEAKER_PORTABLE
+  AMPLIFIER
+  CABLE
+}
